@@ -1,0 +1,95 @@
+# set env.tasks through jenkins, by default is 'all'
+# params:
+#   tasks: ["all"] which equals ["UnitTest","Artifacts","Deploy"]
+#   git_url:
+#   git_branch:
+#   build_yaml:
+
+jobs:
+  - step: Prepare
+    image: "node:12"
+    script:
+      - yarn && yarn build
+      - yarn run test:coverage
+
+  - step: UnitTest
+    parallel:
+    - step: SonarScan
+      kind: sonarqube
+      # image: "sonarsource/sonar-scanner-cli:latest" # Optional
+      with:
+        wait-for-quality-gate: # optional, default is true
+        # -| Specifies the maximum amount of time - a non-negative number followed by one of the suffixes "m", "s" or "h", 
+        # which is considered maximum amount of time during after which an unfinished SonarQube task is considered failed.
+        quality-gate-wait-timeout: # optional, default is 1m
+        project: platform
+        args:
+        - key: sonar.sources
+          value: .
+        - key: sonar.go.coverage.reportPaths
+          value: coverage.out
+        - key: sonar.exclusions
+          value: "**/*_test.go"
+        - key: sonar.tests
+          value: .
+        - key: sonar.test.inclusions
+          value: "**/*_test.go"
+        - key: sonar.sourceEncoding
+          value: "UTF-8"
+    # # Generate code coverage report as following way, path is the relative
+    # - step: Code_Coverage
+    #   kind: codescan@cobertura # Or codescan@clover
+    #   with:
+    #     path: "./test-result"
+    #     file: "code-coverage.cobertura.xml"
+
+    # # Your can visit here for get more detail of jacoco pattern information:
+    # # https://jenkins.io/doc/pipeline/steps/jacoco/#jacoco-record-jacoco-coverage-report
+    # - step: Code_Coverage
+    #   kind: jacoco
+    #   with:
+    #     ##execPattern: target/jacoco.exec
+    #     execPattern:
+    #     classPattern:
+    #     sourcePattern:
+    #     inclusionPattern:
+    #     exclusionPattern:
+
+  - step: Artifacts
+    parallel:
+    - step: Docker
+      kind: docker
+      image: "docker:stable-dind"
+      with:
+        name: 
+        path: "."              # The base path for build image, default is '.'
+        dockerfile: Dockerfile # If not defined, default "Dockerfile"
+        # push-on-success: true 
+        # detect-exists-on-registry: true
+        options:
+        - "--build-arg=[]"
+        - "--pull"
+        - "--quiet"
+
+    - step: Helm
+      kind: helm
+      image: "dtzar/helm-kubectl"
+      with:
+        name: ""
+        action: ["package", "push"]
+        use_chart: standard-chart@latest
+
+    # - step: artifacts
+    #   kind: s3
+    #   with:
+    #     file: "./dist/client"
+    #     bucket:
+    #       name: "s3.images-iherb.com"
+    #       path: "static/v3/client/"
+
+  - step: Deploy
+    kind: helm
+    image: "dtzar/helm-kubectl"
+    with:
+      name: ""
+      action: ["deploy"]

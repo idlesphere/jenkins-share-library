@@ -1,0 +1,17 @@
+# AWS
+Pipeline: AWS Steps
+S3 publisher plugin
+# Jenkins pipeline
+Pipeline: Basic Steps
+HTTP Request Plugin
+Pipeline Utility Steps
+Pipeline: Groovy(load, parallel)
+Pipeline: Shared Groovy Libraries
+Pipeline: SCM Step
+SonarQube Scanner for Jenkins
+AnsiColor
+Git plugin
+Docker Pipeline
+Kubernetes plugin
+Kubernetes CLI Plugin
+
