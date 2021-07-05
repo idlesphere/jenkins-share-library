@@ -24,3 +24,50 @@ def gitFetch() {
 
     return git.Result
 }
+
+/*
+For bitbucket only
+*/
+def updateStatus(Map args) {
+    args.credential = args.credential ?: 'bitbucketOauth'
+    args.status     = args.status     ?: '' // [ "INPROGRESS", "SUCCESSFUL", "FAILED" ]
+    args.project    = args.project    ?: '' // Project name
+    args.revision   = args.revision   ?: '' // Commit hash
+
+    bitbucketStatusNotify(
+            credentialsId : args.credential,
+            buildState    : args.status,
+            repoSlug      : args.project,
+            commitId      : args.revision
+    )
+}
+
+/*
+Get revision
+*/
+def getRevision(Map args) {
+    args.full  = args.full ?: false // default is false, so we get "git rev-parse --short"
+    args.path  = args.path ?: '.'
+
+    def command = ""
+    if (!args.full) {command = "--short"}
+
+    dir(args.path) {
+        def revision = sh(
+            script: "git rev-parse ${command} HEAD",
+            returnStdout: true
+        ).trim()
+    }
+    return revision
+}
+
+
+def tag(Map args) {
+    args.credential = args.credential ?: 'bitbucket'
+    args.tag        = args.tag        ?: ''
+    args.url        = args.url        ?: ''
+  
+    withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: args.credential, usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+        sh("git remote -v; git tag -f ${args.tag}; git push ${args.url} --tags --force")
+    }
+}
