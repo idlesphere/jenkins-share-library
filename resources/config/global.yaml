@@ -1,9 +1,8 @@
 # this will stop all jobs
 jenkins_status: "stable" # "maintenance"
 
-# refers to jenkins credential id
+# refers to jenkins credential id -> will change this to vault
 credential:
-	git: "gitauth"
-	docker: "JFrogAuth"
-	sonarqube: ""
-
+    git: "gitauth"
+    docker: "JFrogAuth"
+    sonarqube: ""
